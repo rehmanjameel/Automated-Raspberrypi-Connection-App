@@ -54,11 +54,11 @@ class AppGlobals : Application() {
         editor.apply()
     }
 
-    fun saveBoolean(status: Boolean) {
+    fun saveBoolean(booleanString: String, status: Boolean) {
 
         val editor: SharedPreferences.Editor = sharedPref.edit()
 
-        editor.putBoolean(KEY_LOGGED_IN, status)
+        editor.putBoolean(booleanString, status)
 
         editor.apply()
     }
@@ -74,9 +74,9 @@ class AppGlobals : Application() {
         return sharedPref.getInt(KEY_NAME, 0)
     }
 
-    fun getValueBoolean(): Boolean {
+    fun getValueBoolean(booleanString: String): Boolean {
 
-        return sharedPref.getBoolean(KEY_LOGGED_IN, false)
+        return sharedPref.getBoolean(booleanString, false)
 
     }
 
