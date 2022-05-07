@@ -136,4 +136,14 @@
         android:layout_marginStart="20dp"
         android:visibility="invisible"/>
 
+    <com.github.florent37.singledateandtimepicker.SingleDateAndTimePicker
+        android:id="@+id/singleDateTimePickerId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:picker_curved="true"
+        app:picker_itemSpacing="6dp"
+        app:picker_curvedMaxAngle="45"
+        android:visibility="invisible"
+        android:layout_below="@id/saveTimeButtonId"
+        android:layout_alignParentBottom="true"/>
 </RelativeLayout>

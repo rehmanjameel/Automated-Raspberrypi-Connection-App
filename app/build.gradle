@@ -44,4 +44,5 @@ dependencies {
 //    implementation("com.github.LaurenceGA.kwamp:kwamp-client-core:1.0.5")
 
     implementation 'io.crossbar.autobahn:autobahn-android:21.7.1'
+    implementation 'com.github.florent37:singledateandtimepicker:2.2.7'
 }

@@ -10,6 +10,8 @@ import android.widget.RadioButton
 import android.widget.RadioGroup
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import com.github.florent37.singledateandtimepicker.SingleDateAndTimePicker
+import com.github.florent37.singledateandtimepicker.dialog.SingleDateAndTimePickerDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.MaterialTimePicker.INPUT_MODE_KEYBOARD
@@ -88,7 +90,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         lightOn_time_button.setOnClickListener {
-            showTimePicker()
+//            showTimePicker()
+            singleDateTimePicker()
         }
 
         lightOff_time_button.setOnClickListener {
@@ -138,8 +141,10 @@ class MainActivity : AppCompatActivity() {
 
             if (lightSwitchOnOffId.textOn == "On") {
                 lightSwitchOnOffId.isChecked = false
+                lightOnOffImageId.setImageResource(R.drawable.light_off)
             } else if (lightSwitchOnOffId.textOff == "Off") {
                 lightSwitchOnOffId.isChecked = true
+                lightOnOffImageId.setImageResource(R.drawable.light_on)
             }
 
             Log.e("Error", "Session not connected or invalid Ip address")
@@ -173,7 +178,7 @@ class MainActivity : AppCompatActivity() {
 //            demonstratePublish(session, details)
 //        }
 
-        val client = Client(wampSession, "ws://192.168.100.163:8080/ws", "realm1")
+        val client = Client(wampSession, "ws://192.168.100.218:8080/ws", "realm1")
         client.connect().whenComplete { exitInfo, throwable ->
             if (throwable == null) {
                 Log.e("Client", "Connection Created")
@@ -224,25 +229,6 @@ class MainActivity : AppCompatActivity() {
 
 //        "$hourAsText:$minuteAsText".also {
 //            output.text = it}
-
-        /*Button bt = (Button)sender
-        val view = View(this@MainActivity)
-        Log.e("buton", (view.id == R.id.lightOff_time_button).toString())
-        val button = view as Button
-        Log.e("Here", "out of when")
-
-        when (view.id) {
-            R.id.lightOn_time_button -> {
-                Log.e("Here", "Here in when")
-                "$hourAsText:$minuteAsText".also {
-                    output.text = it }
-            }
-            R.id.lightOff_time_button -> {
-                "$hourAsText:$minuteAsText".also {
-                    lightOff_time_text.text = it }
-            }
-        }*/
-
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -343,41 +329,40 @@ class MainActivity : AppCompatActivity() {
         saveTimeButtonId.visibility = View.INVISIBLE
     }
 
-//    private fun pickDateTime() {
-//        val currentDateTime = Calendar.getInstance()
-//        val startYear = currentDateTime.get(Calendar.YEAR)
-//        val startMonth = currentDateTime.get(Calendar.MONTH)
-//        val startDay = currentDateTime.get(Calendar.DAY_OF_MONTH)
-//        val startHour = currentDateTime.get(Calendar.HOUR_OF_DAY)
-//        val startMinute = currentDateTime.get(Calendar.MINUTE)
-//
-//        DatePickerDialog(this, DatePickerDialog.OnDateSetListener { _, year, month, day ->
-//            TimePickerDialog(this, TimePickerDialog.OnTimeSetListener { _, hour, minute ->
-//                val pickedDateTime = Calendar.getInstance()
-//                pickedDateTime.set(year, month, day, hour, minute)
-//                doSomethingWith(pickedDateTime)
-//            }, startHour, startMinute, false).show()
-//        }, startYear, startMonth, startDay).show()
-//    }
+    private fun singleDateTimePicker() {
+        SingleDateAndTimePickerDialog.Builder(this) //.bottomSheet()
+            //.curved()
+            //.stepSizeMinutes(15)
+            //.todayText("aujourd'hui")
 
-    /*private fun demonstrateSubscribe(session: Session, details: SessionDetails?) {
-        // Subscribe to topic to receive its events.
-        val subFuture: CompletableFuture<Subscription> = session.subscribe("org.codebase",
-            TriConsumer { args: List<Any>, kwargs: Map<String, Any>, details: EventDetails ->
-                onEvent(args, kwargs, details)
+            .displayListener(object : SingleDateAndTimePickerDialog.DisplayListener {
+                override fun onDisplayed(picker: SingleDateAndTimePicker) {
+                    // Retrieve the SingleDateAndTimePicker
+
+                }
+
+                fun onClosed(picker: SingleDateAndTimePicker?) {
+                    // On dialog closed
+                }
             })
-        subFuture.whenComplete(BiConsumer<Subscription, Throwable> { subscription: Subscription, throwable: Throwable? ->
-            if (throwable == null) {
-                // We have successfully subscribed.
-                println("Subscribed to topic " + subscription.topic)
-            } else {
-                // Something went bad.
-                throwable.printStackTrace()
-            }
-        })
-    }
+            .title("Select Date time")
+            .curved()
+            .displayMinutes(true)
+            .displayHours(true)
+            .displayDays(false)
+            .displayMonth(true)
+            .displayYears(true)
+            .displayDaysOfMonth(true)
+            .minutesStep(1)
+            .displayMonthNumbers(true)
+            .listener ( object: SingleDateAndTimePickerDialog.Listener {
+                override fun onDateSelected(date: Date?) {
 
-    private fun onEvent(args: List<Any>, kwargs: Map<String, Any>, details: EventDetails) {
-        println(String.format("Got event: %s", args[0]))
-    }*/
+                }
+
+            })
+            .display()
+
+
+    }
 }
