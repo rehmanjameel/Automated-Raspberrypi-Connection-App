@@ -8,13 +8,40 @@
     tools:context=".MainActivity"
     android:orientation="vertical">
 
+    <RadioGroup
+        android:id="@+id/radioGroupId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/sunTimeId"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sun timing"/>
+
+        <RadioButton
+            android:id="@+id/manualTimeId"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Manual timing"/>
+
+        <RadioButton
+            android:id="@+id/directOnOffId"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Direct On/Off" />
+    </RadioGroup>
+
     <LinearLayout
+        android:id="@+id/powerButtonLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="20dp"
         android:layout_marginStart="20dp"
-        android:layout_marginEnd="20dp">
+        android:layout_marginEnd="20dp"
+        android:layout_below="@id/radioGroupId">
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/lightSwitchOnOffId"
@@ -39,5 +66,74 @@
             android:src="@drawable/light_off"/>
 
     </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/timeLinearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/powerButtonLayout"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="10dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/lightOn_time_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Light on time"
+            android:textAllCaps="false" />
+
+        <TextView
+            android:id="@+id/lightOn_time_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="--"
+            android:textSize="20sp"
+            android:layout_marginTop="20dp"
+            android:layout_marginStart="20dp"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/offTimeLinearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/timeLinearLayout"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="10dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/lightOff_time_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Light off time"
+            android:textAllCaps="false" />
+
+        <TextView
+            android:id="@+id/lightOff_time_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="--"
+            android:textSize="20sp"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="20dp"/>
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/saveTimeButtonId"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save Time"
+        android:textAllCaps="false"
+        android:layout_below="@id/offTimeLinearLayout"
+        android:layout_marginTop="30dp"
+        android:layout_marginStart="20dp"
+        android:visibility="invisible"/>
 
 </RelativeLayout>

@@ -32,7 +32,6 @@ class AppGlobals : Application() {
         Log.e("Check ", "yes")
 
         sharedPref = myContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-
     }
 
     fun saveString(KEY_NAME: String, text: String) {
