@@ -10,17 +10,16 @@ import android.widget.RadioButton
 import android.widget.RadioGroup
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import com.github.florent37.singledateandtimepicker.SingleDateAndTimePicker
 import com.github.florent37.singledateandtimepicker.dialog.SingleDateAndTimePickerDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.timepicker.MaterialTimePicker
-import com.google.android.material.timepicker.MaterialTimePicker.INPUT_MODE_KEYBOARD
-import com.google.android.material.timepicker.TimeFormat
 import io.crossbar.autobahn.wamp.Client
 import io.crossbar.autobahn.wamp.Session
-import io.crossbar.autobahn.wamp.types.*
+import io.crossbar.autobahn.wamp.types.CallResult
+import io.crossbar.autobahn.wamp.types.Publication
 import kotlinx.android.synthetic.main.activity_main.*
 import java.lang.String
+import java.text.ParseException
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -39,8 +38,6 @@ class MainActivity : AppCompatActivity() {
 
     private var switchStatus:Boolean? = null
     private var lightStatus:Boolean? = null
-    private var selectedHour: Int? = null
-    private var selectedMinute: Int? = null
 
     private var buttonText = ""
     private var hourAsText = ""
@@ -54,8 +51,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val date: LocalDateTime = LocalDateTime.now()
+        val seconds: Int = date.toLocalTime().toSecondOfDay()
+        Log.e("seconds", seconds.toString())
         /*** creating connection on app start ***/
         publishSession()
+        checkedRadioButtonId()
+        getRadioButtonText()
 
         switchStatus = appGlobals.getValueBoolean(SWITCH_STATUS)
         lightStatus = appGlobals.getValueBoolean(LIGHT_STATUS)
@@ -66,6 +68,7 @@ class MainActivity : AppCompatActivity() {
             lightOnOffImageId.setImageResource(R.drawable.light_off)
         }
 
+        Log.e("current", System.currentTimeMillis().toString())
         /*** Switch button checked change listener to check the state of button
          * and publishing button current state text to subscribed topic ***/
         lightSwitchOnOffId.setOnCheckedChangeListener { compoundButton, checked ->
@@ -84,22 +87,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        /*** constraint layout id***/
-        constraintLayoutId.setOnClickListener {
-            hideSoftKeyboard()
-        }
-
-        lightOn_time_button.setOnClickListener {
-//            showTimePicker()
-            singleDateTimePicker()
-        }
-
-        lightOff_time_button.setOnClickListener {
-            showOffTimePicker()
-        }
-
-        getRadioButtonText()
-
         savedOnTime = appGlobals.getValueString("LightOnTime").toString()
 
         savedOffTime = appGlobals.getValueString("LightOffTime").toString()
@@ -112,6 +99,24 @@ class MainActivity : AppCompatActivity() {
             lightOn_time_text.text = savedOnTime
             lightOff_time_text.text = savedOffTime
         }
+
+        /*** constraint layout id***/
+        constraintLayoutId.setOnClickListener {
+            hideSoftKeyboard()
+        }
+
+        lightOn_time_button.setOnClickListener {
+            singleLightOnDateTimePicker()
+        }
+
+        lightOff_time_button.setOnClickListener {
+            singleLightOffDateTimePicker()
+        }
+
+        saveTimeButtonId.setOnClickListener {
+            callProcedure()
+        }
+
     }
 
     /*** publishing button text to the subscribed topic org.codebase
@@ -154,13 +159,18 @@ class MainActivity : AppCompatActivity() {
     private fun callProcedure() {
         if (wampSession.isConnected) {
             val args: MutableList<Any> = ArrayList()
-//            args.add(var1)
-//            args.add(var2)
-//            args.add(var3)
+            val savedOnTimeSeconds :Long = appGlobals.getValueLong("timeSeconds")
+            val savedOffTimeSeconds: Long  = appGlobals.getValueLong("offTimeSeconds")
+            Log.e("time", lightOn_time_text.text.toString())
+            Log.e("time", savedOnTimeSeconds.toString())
+            Log.e("time", savedOffTimeSeconds.toString())
+//            args.add(savedOnTimeSeconds.toString())
+//            args.add(savedOffTimeSeconds.toString())
+//            args.add(true)
             val callProc: CompletableFuture<CallResult> = wampSession.call("org.codebase.sys.light_on_off",
-                args, "", true)
+                savedOnTimeSeconds, savedOffTimeSeconds, true)
             callProc.thenAccept { callResult ->
-                println(String.format("Call result: %s", callResult.results[0]))
+                println(String.format("Call result: %s", callResult.results))
             }
             callProc.exceptionally { throwable ->
                 Log.e("thr", throwable.message.toString())
@@ -173,10 +183,6 @@ class MainActivity : AppCompatActivity() {
      * over networks with wamp connection ***/
     private fun publishSession() {
         wampSession = Session()
-//        wampSession.addOnJoinListener(this::demonstrateSubscribe)
-//        wampSession.addOnJoinListener { session, details ->
-//            demonstratePublish(session, details)
-//        }
 
         val client = Client(wampSession, "ws://192.168.100.218:8080/ws", "realm1")
         client.connect().whenComplete { exitInfo, throwable ->
@@ -193,86 +199,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun showTimePicker(){
-        val hour = selectedHour ?: LocalDateTime.now().hour
-        /*** '?:' is an Elvis Operator
-         * If first operand isn't null, then it will be returned.
-         * If it is null, then the second operand will be returned.
-         * it ensure that expression won't return any null value ***/
-        val minutes = selectedMinute ?: LocalDateTime.now().minute
-
-        MaterialTimePicker.Builder()
-            .setTimeFormat(TimeFormat.CLOCK_24H)
-            .setHour(hour)
-            .setMinute(minutes)
-            .setInputMode(INPUT_MODE_KEYBOARD)
-            .build()
-            .apply { addOnPositiveButtonClickListener {
-                onTimeSelected(this.hour, this.minute)
-            }
-            }.show(supportFragmentManager, MaterialTimePicker::class.java.canonicalName)
-    }
-
-    private fun onTimeSelected(hour: Int, minute: Int) {
-        selectedHour = hour
-        selectedMinute = minute
-        hourAsText = if (hour < 10) "0$hour" else hour.toString()
-        minuteAsText = if (minute < 10) "0$minute" else minute.toString()
-        val onTime = "$hourAsText:$minuteAsText"
-
-        appGlobals.saveString("LightOnTime", onTime)
-        savedOnTime = appGlobals.getValueString("LightOnTime").toString()
-        lightOn_time_text.text = savedOnTime
-        lightOff_time_button.backgroundTintList = getColorStateList(R.color.purple_700)
-        lightOff_time_button.isClickable = true
-
-//        "$hourAsText:$minuteAsText".also {
-//            output.text = it}
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun showOffTimePicker(){
-        val hour = selectedHour ?: LocalDateTime.now().hour
-        val minutes = selectedMinute ?: LocalDateTime.now().minute
-
-        MaterialTimePicker.Builder()
-            .setTimeFormat(TimeFormat.CLOCK_24H)
-            .setHour(hour)
-            .setMinute(minutes)
-            .setInputMode(INPUT_MODE_KEYBOARD)
-            .build()
-            .apply { addOnPositiveButtonClickListener { offTimeSelected(this.hour, this.minute)
-            }
-            }.show(supportFragmentManager, MaterialTimePicker::class.java.canonicalName)
-    }
-
-    private fun offTimeSelected(hour: Int, minute: Int) {
-        selectedHour = hour
-        selectedMinute = minute
-        hourAsText = if (hour < 10) "0$hour" else hour.toString()
-        minuteAsText = if (minute < 10) "0$minute" else minute.toString()
-        val offTime = "$hourAsText:$minuteAsText"
-        appGlobals.saveString("LightOffTime", offTime)
-
-        savedOffTime = appGlobals.getValueString("LightOffTime").toString()
-        lightOff_time_text.text = savedOffTime
-        saveTimeButtonId.visibility = View.VISIBLE
-
-//        "$hourAsText:$minuteAsText".also {
-//            lightOff_time_text.text = it }
-    }
-
-    private fun getRadioButtonText() {
-        //Getting radiobutton text on the basis of radio button id
+    private fun checkedRadioButtonId() {
         val sp : Int = appGlobals.getValueInt("sp")
         when (sp) {
             1 -> {
                 sunTimeId.isChecked = true
+                lightSwitchOnOffId.isChecked = false
+                lightSwitchOnOffId.isClickable = false
+                lightOnOffImageId.setImageResource(R.drawable.light_off)
                 disableTimeButtons()
             }
             2 -> {
                 manualTimeId.isChecked = true
+                lightSwitchOnOffId.isChecked = false
+                lightSwitchOnOffId.isClickable = false
+                lightOnOffImageId.setImageResource(R.drawable.light_off)
                 enableTimeButtons()
             }
             3 -> {
@@ -280,6 +221,11 @@ class MainActivity : AppCompatActivity() {
                 disableTimeButtons()
             }
         }
+    }
+
+    private fun getRadioButtonText() {
+        //Getting radiobutton text on the basis of radio button id
+
         radioGroupId.setOnCheckedChangeListener { radioGroup, id ->
             val radioButtonId: Int = radioGroup.checkedRadioButtonId
             if (radioButtonId != -1) {
@@ -291,23 +237,16 @@ class MainActivity : AppCompatActivity() {
             when (id) {
                 R.id.sunTimeId -> {
                     appGlobals.saveInt("sp", 1)
-                    lightSwitchOnOffId.isClickable = false
-                    disableTimeButtons()
-                    buttonText = listOf<Any>(hourAsText, minuteAsText).toString()
-                    println("manual $buttonText")
+                    checkedRadioButtonId()
                 }
                 R.id.manualTimeId -> {
                     appGlobals.saveInt("sp", 2)
-
-                    lightSwitchOnOffId.isClickable = false
-                    enableTimeButtons()
-                    println("sun $buttonText")
+                    checkedRadioButtonId()
                 }
                 R.id.directOnOffId -> {
                     appGlobals.saveInt("sp", 3)
-                    disableTimeButtons()
+                    checkedRadioButtonId()
                     lightSwitchOnOffId.isClickable = true
-                    println("direct $buttonText")
                 }
             }
         }
@@ -317,6 +256,8 @@ class MainActivity : AppCompatActivity() {
         lightOn_time_button.backgroundTintList = getColorStateList(R.color.off_white)
         lightOn_time_button.isClickable = false
         lightOff_time_button.backgroundTintList = getColorStateList(R.color.off_white)
+        lightOff_time_text.visibility = View.INVISIBLE
+        lightOn_time_text.visibility = View.INVISIBLE
         lightOff_time_button.isClickable = false
         saveTimeButtonId.visibility = View.INVISIBLE
     }
@@ -324,27 +265,19 @@ class MainActivity : AppCompatActivity() {
     private fun enableTimeButtons() {
         lightOn_time_button.backgroundTintList = getColorStateList(R.color.purple_700)
         lightOn_time_button.isClickable = true
-        lightOff_time_button.backgroundTintList = getColorStateList(R.color.off_white)
-        lightOff_time_button.isClickable = false
+        lightOff_time_button.backgroundTintList = getColorStateList(R.color.purple_700)
+        lightOff_time_button.isClickable = true
+        lightOff_time_text.visibility = View.VISIBLE
+        lightOn_time_text.visibility = View.VISIBLE
         saveTimeButtonId.visibility = View.INVISIBLE
     }
 
-    private fun singleDateTimePicker() {
+    private fun singleLightOnDateTimePicker() {
         SingleDateAndTimePickerDialog.Builder(this) //.bottomSheet()
-            //.curved()
-            //.stepSizeMinutes(15)
-            //.todayText("aujourd'hui")
 
-            .displayListener(object : SingleDateAndTimePickerDialog.DisplayListener {
-                override fun onDisplayed(picker: SingleDateAndTimePicker) {
-                    // Retrieve the SingleDateAndTimePicker
-
-                }
-
-                fun onClosed(picker: SingleDateAndTimePicker?) {
-                    // On dialog closed
-                }
-            })
+            .displayListener {picker ->
+                // Retrieve the SingleDateAndTimePicker
+            }
             .title("Select Date time")
             .curved()
             .displayMinutes(true)
@@ -355,14 +288,61 @@ class MainActivity : AppCompatActivity() {
             .displayDaysOfMonth(true)
             .minutesStep(1)
             .displayMonthNumbers(true)
-            .listener ( object: SingleDateAndTimePickerDialog.Listener {
-                override fun onDateSelected(date: Date?) {
+            .listener { date ->
+                if (date != null) {
+                    Log.e("date", date.time.toString())
 
+                    Log.e("form", savedOnTime)
+                    val formatter = SimpleDateFormat("dd-MM-yyyy HH:mm")
+
+                    val formatted = formatter.format(date.time)
+                    appGlobals.saveString("LightOnTime", formatted)
+                    savedOnTime = appGlobals.getValueString("LightOnTime").toString()
+                    println("Current Date and Time is: $formatted")
+                    lightOn_time_text.text = formatted.toString()
+                    appGlobals.saveLong("timeSeconds", date.time)
                 }
-
-            })
+            }
             .display()
+    }
 
+    private fun singleLightOffDateTimePicker() {
+        SingleDateAndTimePickerDialog.Builder(this) //.bottomSheet()
 
+            .displayListener {picker ->
+                // Retrieve the SingleDateAndTimePicker
+            }
+            .title("Select Date time")
+            .curved()
+            .displayMinutes(true)
+            .displayHours(true)
+            .displayDays(false)
+            .displayMonth(true)
+            .displayYears(true)
+            .displayDaysOfMonth(true)
+            .minutesStep(1)
+            .displayMonthNumbers(true)
+            .listener { date ->
+                if (date != null) {
+                    Log.e("date", date.time.toString())
+
+                    Log.e("form", savedOnTime)
+                    val formatter = SimpleDateFormat("dd-MM-yyyy HH:mm")
+
+                    val formatted = formatter.format(date.time)
+                    appGlobals.saveString("LightOffTime", formatted)
+                    savedOnTime = appGlobals.getValueString("LightOffTime").toString()
+                    println("Current Date and Time is: $formatted")
+                    lightOff_time_text.text = formatted.toString()
+                    saveTimeButtonId.visibility = View.VISIBLE
+
+//                    val givenDateString = "Tue Apr 23 16:08:28 GMT+05:30 2013"
+//                    val sdf = SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy")
+                    
+
+                    appGlobals.saveLong("offTimeSeconds", date.time)
+                }
+            }
+            .display()
     }
 }

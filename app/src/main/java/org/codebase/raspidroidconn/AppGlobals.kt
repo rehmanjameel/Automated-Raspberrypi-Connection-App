@@ -53,6 +53,14 @@ class AppGlobals : Application() {
         editor.apply()
     }
 
+    fun saveLong(KEY_NAME: String, value: Long) {
+        val editor: SharedPreferences.Editor = sharedPref.edit()
+
+        editor.putLong(KEY_NAME, value)
+
+        editor.apply()
+    }
+
     fun saveBoolean(booleanString: String, status: Boolean) {
 
         val editor: SharedPreferences.Editor = sharedPref.edit()
@@ -71,6 +79,10 @@ class AppGlobals : Application() {
     fun getValueInt(KEY_NAME: String): Int {
 
         return sharedPref.getInt(KEY_NAME, 0)
+    }
+
+    fun getValueLong(KEY_NAME: String): Long {
+        return sharedPref.getLong(KEY_NAME, 0)
     }
 
     fun getValueBoolean(booleanString: String): Boolean {
