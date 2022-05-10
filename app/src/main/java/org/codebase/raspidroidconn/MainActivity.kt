@@ -77,13 +77,15 @@ class MainActivity : AppCompatActivity() {
                 lightOnOffImageId.setImageResource(R.drawable.light_on)
                 appGlobals.saveBoolean(SWITCH_STATUS, true)
                 appGlobals.saveBoolean(LIGHT_STATUS, true)
-                demonstratePublish()
+                callProcedure()
+//                demonstratePublish()
             } else {
                 buttonText = "Off"
                 lightOnOffImageId.setImageResource(R.drawable.light_off)
                 appGlobals.saveBoolean(SWITCH_STATUS, false)
                 appGlobals.saveBoolean(LIGHT_STATUS, false)
-                demonstratePublish()
+                callProcedure()
+//                demonstratePublish()
             }
         }
 
@@ -167,16 +169,28 @@ class MainActivity : AppCompatActivity() {
 //            args.add(savedOnTimeSeconds.toString())
 //            args.add(savedOffTimeSeconds.toString())
 //            args.add(true)
-            val callProc: CompletableFuture<CallResult> = wampSession.call("org.codebase.sys.light_on_off",
-                savedOnTimeSeconds, savedOffTimeSeconds, true)
-            callProc.thenAccept { callResult ->
-                println(String.format("Call result: %s", callResult.results))
+            if (buttonText.lowercase() == "on") {
+                val callProc: CompletableFuture<CallResult> = wampSession.call("pk.codebase.sys.light_on")
+                callProc.thenAccept { callResult ->
+                    println(String.format("Call result: %s", callResult.results))
+                }
+                callProc.exceptionally { throwable ->
+                    Log.e("thr", throwable.message.toString())
+                    throwable.printStackTrace()
+                    null
+                }
+            } else if (buttonText.lowercase() == "off") {
+                val callProc: CompletableFuture<CallResult> = wampSession.call("pk.codebase.sys.light_off")
+                callProc.thenAccept { callResult ->
+                    println(String.format("Call result: %s", callResult.results))
+                }
+                callProc.exceptionally { throwable ->
+                    Log.e("thr", throwable.message.toString())
+                    throwable.printStackTrace()
+                    null
+                }
             }
-            callProc.exceptionally { throwable ->
-                Log.e("thr", throwable.message.toString())
-                throwable.printStackTrace()
-                null
-            }
+
         }
     }
     /*** private function using for creating the client connection to publish the events
@@ -300,7 +314,8 @@ class MainActivity : AppCompatActivity() {
                     savedOnTime = appGlobals.getValueString("LightOnTime").toString()
                     println("Current Date and Time is: $formatted")
                     lightOn_time_text.text = formatted.toString()
-                    appGlobals.saveLong("timeSeconds", date.time)
+                    val dateInSeconds = (date.time) / 1000
+                    appGlobals.saveLong("timeSeconds", dateInSeconds)
                 }
             }
             .display()
@@ -338,9 +353,9 @@ class MainActivity : AppCompatActivity() {
 
 //                    val givenDateString = "Tue Apr 23 16:08:28 GMT+05:30 2013"
 //                    val sdf = SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy")
-                    
-
-                    appGlobals.saveLong("offTimeSeconds", date.time)
+                    val dateInSeconds = (date.time) / 1000
+                    Log.e("date in sec", dateInSeconds.toString())
+                    appGlobals.saveLong("offTimeSeconds", dateInSeconds)
                 }
             }
             .display()
