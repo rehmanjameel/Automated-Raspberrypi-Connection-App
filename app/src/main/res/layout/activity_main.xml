@@ -83,7 +83,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Light on time"
+            android:text="Set light on"
             android:clickable="false"
             android:backgroundTint="@color/off_white"
             android:textAllCaps="false" />
@@ -117,7 +117,7 @@
             android:layout_marginTop="10dp"
             android:clickable="false"
             android:backgroundTint="@color/off_white"
-            android:text="Light off time"
+            android:text="set light off"
             android:textAllCaps="false" />
 
         <TextView
