@@ -261,7 +261,7 @@ class MainActivity : AppCompatActivity() {
     private fun publishSession() {
         wampSession = Session()
 
-        val client = Client(wampSession, "ws://192.168.100.218:8080/ws", "realm1")
+        val client = Client(wampSession, "ws://192.168.0.108:8080/ws", "realm1")
         client.connect().whenComplete { exitInfo, throwable ->
             Log.e("info", exitInfo.toString())
 //            Log.e("info", throwable.toString())
