@@ -13,7 +13,7 @@
         android:theme="@style/Theme.RaspiDroidConn">
         <activity
             android:name=".ActivityIpAddress"
-            android:exported="true" >
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

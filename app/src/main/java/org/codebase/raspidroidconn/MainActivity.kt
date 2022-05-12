@@ -39,17 +39,16 @@ class MainActivity : AppCompatActivity() {
     private var lightStatus:Boolean? = null
 
     private var buttonText = ""
-    private var hourAsText = ""
-    private var minuteAsText = ""
     private var radioButtonText = ""
-    private var savedOnTime = ""
-    private var savedOffTime = ""
+    private var savedOnTime: String? = ""
+    private var savedOffTime: String? = ""
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        title = "Light ON/OFF"
         /*** creating connection on app start ***/
         publishSession()
         checkedRadioButtonId()
@@ -64,31 +63,28 @@ class MainActivity : AppCompatActivity() {
             lightOnOffImageId.setImageResource(R.drawable.light_off)
         }
 
-        Log.e("current", System.currentTimeMillis().toString())
         /*** Switch button checked change listener to check the state of button
          * and publishing button current state text to subscribed topic ***/
-        lightSwitchOnOffId.setOnCheckedChangeListener { compoundButton, checked ->
-            if (compoundButton.isChecked) {
-                buttonText = "On"
+        lightSwitchOnOffId.setOnClickListener {
+            if (lightSwitchOnOffId.isChecked) {
+                buttonText = "ON"
                 lightOnOffImageId.setImageResource(R.drawable.light_on)
                 appGlobals.saveBoolean(SWITCH_STATUS, true)
                 appGlobals.saveBoolean(LIGHT_STATUS, true)
-                callProcedure()
-//                demonstratePublish()
+                directOnOff()
             } else {
-                buttonText = "Off"
+                buttonText = "OFF"
                 lightOnOffImageId.setImageResource(R.drawable.light_off)
                 appGlobals.saveBoolean(SWITCH_STATUS, false)
                 appGlobals.saveBoolean(LIGHT_STATUS, false)
-                callProcedure()
-//                demonstratePublish()
+                directOnOff()
             }
         }
 
-        savedOnTime = appGlobals.getValueString("LightOnTime").toString()
+        savedOnTime = appGlobals.getValueString("LightOnTime")
 
-        savedOffTime = appGlobals.getValueString("LightOffTime").toString()
-        if (savedOnTime.isBlank() && savedOffTime.isBlank()) {
+        savedOffTime = appGlobals.getValueString("LightOffTime")
+        if (lightOn_time_text.text.isEmpty() && lightOff_time_text.text.isEmpty()) {
             Log.e("here", "is")
             lightOn_time_text.text = "__"
             lightOff_time_text.text = "__"
@@ -98,82 +94,32 @@ class MainActivity : AppCompatActivity() {
             lightOff_time_text.text = savedOffTime
         }
 
-        /*** constraint layout id***/
-        constraintLayoutId.setOnClickListener {
-            hideSoftKeyboard()
-        }
-
-        lightOn_time_text.setOnClickListener {
+        lightOnTimeButtonId.setOnClickListener {
             singleLightOnDateTimePicker()
         }
+
         lightOn_time_button.setOnClickListener {
-            callProcedure()
+            saveLightOnOffTime()
         }
 
-        lightOff_time_text.setOnClickListener {
+        lightOffTimeButtonId.setOnClickListener {
             singleLightOffDateTimePicker()
         }
-        lightOff_time_button.setOnClickListener {
-            callProcedure()
-        }
 
-//        saveTimeButtonId.setOnClickListener {
-//            callProcedure()
-//        }
+        lightOff_time_button.setOnClickListener {
+            saveLightOnOffTime()
+        }
 
     }
 
-    /*** publishing button text to the subscribed topic org.codebase
-     * on raspberrypi python code ***/
-//    private fun demonstratePublish(){
-////        val args = listOf<Any>(details.realm, details.authmethod, buttonText)
-//        Log.e("butText", buttonText)
-//        if (wampSession.isConnected) {
-//            val pubFuture = wampSession.publish("org.codebase", buttonText.lowercase())
-//
-//            pubFuture.thenAccept { publication: Publication? ->
-//                println("Published successfully $publication")
-//            }
-//            pubFuture.exceptionally { throwable ->
-//                Log.e("thr", throwable.message.toString())
-//                throwable.printStackTrace()
-//                null
-//            }
-//        } else {
-//            val builder = MaterialAlertDialogBuilder(this@MainActivity)
-//            builder.setTitle("Wamp Error!")
-//            builder.setMessage("Session not connected or invalid Ip address")
-//            builder.setPositiveButton("Ok") {_, _ ->
-//                builder.create().dismiss()
-//            }
-//            builder.create().show()
-//
-//            if (lightSwitchOnOffId.textOn == "On") {
-//                lightSwitchOnOffId.isChecked = false
-//                lightOnOffImageId.setImageResource(R.drawable.light_off)
-//            } else if (lightSwitchOnOffId.textOff == "Off") {
-//                lightSwitchOnOffId.isChecked = true
-//                lightOnOffImageId.setImageResource(R.drawable.light_on)
-//            }
-//
-//            Log.e("Error", "Session not connected or invalid Ip address")
-//        }
-//    }
-
     private fun callProcedure() {
         // val args: MutableList<Any> = ArrayList()
-        val savedOnTimeSeconds: Long = appGlobals.getValueLong("timeSeconds")
-        val savedOffTimeSeconds: Long = appGlobals.getValueLong("offTimeSeconds")
+
         Log.e("time", lightOn_time_text.text.toString())
-        Log.e("time", savedOnTimeSeconds.toString())
-        Log.e("time", savedOffTimeSeconds.toString())
-//            args.add(savedOnTimeSeconds.toString())
-//            args.add(savedOffTimeSeconds.toString())
-//            args.add(true)
+
         if (appGlobals.getValueInt("sp") == 1) {
             if (wampSession.isConnected) {
-                val callProc: CompletableFuture<CallResult> =
-                    wampSession.call("pk.codebase.sys.automatically_on_off")
+                val callProc: CompletableFuture<CallResult> = wampSession.call("pk.codebase.sys.automatically_on_off")
                 callProc.thenAccept { callResult ->
                     println(String.format("Call result: %s", callResult.results))
                 }
@@ -186,117 +132,115 @@ class MainActivity : AppCompatActivity() {
             } else {
                 errorDialogBox("Connection not created to server! or invalid Ip address")
             }
-        } else if (appGlobals.getValueInt("sp") == 2) {
-            Log.e("on", "is here")
-            if (wampSession.isConnected) {
-                if (lightOn_time_button.isPressed) {
-                    val callProc: CompletableFuture<CallResult> =
-                        wampSession.call("pk.codebase.sys.set_on_at", savedOnTimeSeconds)
-                    callProc.thenAccept { callResult ->
-                        println(String.format("Call result: %s", callResult.results))
-                    }
-                    callProc.exceptionally { throwable ->
-                        Log.e("thr", throwable.message.toString())
-                        errorDialogBox(throwable.message.toString())
-                        throwable.printStackTrace()
-                        null
-                    }
-                } else if (lightOff_time_button.isPressed) {
-                    Log.e("off", "here")
-                    val callProc: CompletableFuture<CallResult> =
-                        wampSession.call("pk.codebase.sys.set_off_at", savedOffTimeSeconds)
-                    callProc.thenAccept { callResult ->
-                        println(String.format("Call result: %s", callResult.results))
-                    }
-                    callProc.exceptionally { throwable ->
-                        Log.e("thr", throwable.message.toString())
-                        errorDialogBox(throwable.message.toString())
-                        throwable.printStackTrace()
-                        null
-                    }
-                }
-            } else {
-                errorDialogBox("Connection not created to server! or invalid Ip address")
-            }
-        } else if (appGlobals.getValueInt("sp") == 3) {
-            Log.e("is1", "here")
-            if (wampSession.isConnected) {
-                Log.e("is", "here")
-                if (buttonText.lowercase() == "on") {
-                    val callProc: CompletableFuture<CallResult> =
-                        wampSession.call("pk.codebase.sys.light_on")
-                    callProc.thenAccept { callResult ->
-                        println(String.format("Call result: %s", callResult.results))
-                    }
-                    callProc.exceptionally { throwable ->
-                        Log.e("thr", throwable.message.toString())
-                        errorDialogBox(throwable.message.toString())
-                        throwable.printStackTrace()
-                        null
-                    }
-                } else if (buttonText.lowercase() == "off") {
-                    val callProc: CompletableFuture<CallResult> =
-                        wampSession.call("pk.codebase.sys.light_off")
-                    callProc.thenAccept { callResult ->
-                        println(String.format("Call result: %s", callResult.results))
-                    }
-                    callProc.exceptionally { throwable ->
-                        Log.e("thr", throwable.message.toString())
-                        errorDialogBox(throwable.message.toString())
-                        throwable.printStackTrace()
-                        null
-                    }
-                }
-            } else {
-                errorDialogBox("Connection not created to server! or invalid Ip address")
-            }
         }
-//        if (wampSession.isConnected) {
-//
-//        }
     }
 
     /*** private function using for creating the client connection to publish the events
      * over networks with wamp connection ***/
     private fun publishSession() {
         wampSession = Session()
-
-        val client = Client(wampSession, "ws://192.168.0.108:8080/ws", "realm1")
+        val ipAddress = appGlobals.getValueString("Full_IP_Address")
+        val client = Client(wampSession, "ws://$ipAddress:8080/ws", "realm1")
         client.connect().whenComplete { exitInfo, throwable ->
             Log.e("info", exitInfo.toString())
-//            Log.e("info", throwable.toString())
             if (throwable == null) {
                 Log.e("Client", "Connection Created")
             }
         }
     }
 
-    // extension function to hide soft keyboard programmatically
-    private fun Activity.hideSoftKeyboard() {
-        (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).apply {
-            hideSoftInputFromWindow(currentFocus?.windowToken, 0)
+    private fun directOnOff() {
+        if (wampSession.isConnected) {
+            Log.e("is", "here")
+            if (buttonText.lowercase() == "on") {
+                val callProc: CompletableFuture<CallResult> = wampSession.call("pk.codebase.sys.light_on")
+                callProc.thenAccept { callResult ->
+                    println(String.format("Call result: %s", callResult.results))
+                }
+                callProc.exceptionally { throwable ->
+                    Log.e("thr", throwable.message.toString())
+                    lightSwitchOnOffId.isChecked = false
+                    lightOnOffImageId.setImageResource(R.drawable.light_off)
+                    errorDialogBox(throwable.message.toString())
+                    throwable.printStackTrace()
+                    null
+                }
+            } else if (buttonText.lowercase() == "off") {
+                val callProc: CompletableFuture<CallResult> = wampSession.call("pk.codebase.sys.light_off")
+                callProc.thenAccept { callResult ->
+                    println(String.format("Call result: %s", callResult.results))
+                }
+                callProc.exceptionally { throwable ->
+                    Log.e("thr", throwable.message.toString())
+                    lightSwitchOnOffId.isChecked = false
+                    lightOnOffImageId.setImageResource(R.drawable.light_off)
+                    errorDialogBox(throwable.message.toString())
+                    throwable.printStackTrace()
+                    null
+                }
+            }
+        } else {
+            errorDialogBox("Connection not created to server! or invalid Ip address")
+        }
+    }
+
+    private fun saveLightOnOffTime() {
+        val savedOnTimeSeconds: Long = appGlobals.getValueLong("timeSeconds")
+        val savedOffTimeSeconds: Long = appGlobals.getValueLong("offTimeSeconds")
+
+        if (wampSession.isConnected) {
+            if (lightOn_time_button.isPressed) {
+                Log.e("on", "is here")
+                val callProc: CompletableFuture<CallResult> = wampSession.call("pk.codebase.sys.set_on_at", savedOnTimeSeconds)
+                callProc.thenAccept { callResult ->
+                    println(String.format("Call result: %s", callResult.results))
+                }
+                callProc.exceptionally { throwable ->
+                    Log.e("thr", throwable.message.toString())
+                    errorDialogBox(throwable.message.toString())
+                    throwable.printStackTrace()
+                    null
+                }
+            } else if (lightOff_time_button.isPressed) {
+                Log.e("off", "here")
+                val callProc: CompletableFuture<CallResult> = wampSession.call("pk.codebase.sys.set_off_at", savedOffTimeSeconds)
+                callProc.thenAccept { callResult ->
+                    println(String.format("Call result: %s", callResult.results))
+                }
+                callProc.exceptionally { throwable ->
+                    Log.e("thr", throwable.message.toString())
+                    errorDialogBox(throwable.message.toString())
+                    throwable.printStackTrace()
+                    null
+                }
+            }
+        } else {
+            errorDialogBox("Connection not created to server! or invalid Ip address")
         }
     }
 
     private fun checkedRadioButtonId() {
         val sp : Int = appGlobals.getValueInt("sp")
+        Log.e("sp", sp.toString())
         when (sp) {
             1 -> {
+                callProcedure()
                 sunTimeId.isChecked = true
                 lightSwitchOnOffId.isChecked = false
-                lightSwitchOnOffId.isClickable = false
+                lightSwitchOnOffId.isEnabled = false
                 lightOnOffImageId.setImageResource(R.drawable.light_off)
                 disableTimeButtons()
             }
             2 -> {
                 manualTimeId.isChecked = true
                 lightSwitchOnOffId.isChecked = false
-                lightSwitchOnOffId.isClickable = false
+                lightSwitchOnOffId.isEnabled = false
                 lightOnOffImageId.setImageResource(R.drawable.light_off)
                 enableTimeButtons()
             }
             3 -> {
                 directOnOffId.isChecked = true
+                lightSwitchOnOffId.isEnabled = true
                 disableTimeButtons()
             }
         }
@@ -325,34 +269,36 @@ class MainActivity : AppCompatActivity() {
                 R.id.directOnOffId -> {
                     appGlobals.saveInt("sp", 3)
                     checkedRadioButtonId()
-                    lightSwitchOnOffId.isClickable = true
+                    lightSwitchOnOffId.isEnabled = true
                 }
             }
         }
     }
 
     private fun disableTimeButtons() {
+        lightOnTimeButtonId.isEnabled = false
+        lightOffTimeButtonId.isEnabled = false
         lightOn_time_button.backgroundTintList = getColorStateList(R.color.off_white)
-        lightOn_time_button.isClickable = false
+        lightOn_time_button.isEnabled = false
         lightOff_time_button.backgroundTintList = getColorStateList(R.color.off_white)
         lightOff_time_text.visibility = View.INVISIBLE
         lightOn_time_text.visibility = View.INVISIBLE
-        lightOff_time_button.isClickable = false
+        lightOff_time_button.isEnabled = false
         saveTimeButtonId.visibility = View.INVISIBLE
     }
 
     private fun enableTimeButtons() {
-        lightOn_time_button.backgroundTintList = getColorStateList(R.color.purple_700)
-        lightOn_time_button.isClickable = true
-        lightOff_time_button.backgroundTintList = getColorStateList(R.color.purple_700)
-        lightOff_time_button.isClickable = true
+        lightOnTimeButtonId.isEnabled = true
+        lightOffTimeButtonId.isEnabled = true
+
         lightOff_time_text.visibility = View.VISIBLE
         lightOn_time_text.visibility = View.VISIBLE
 //        saveTimeButtonId.visibility = View.INVISIBLE
     }
 
     private fun singleLightOnDateTimePicker() {
-        SingleDateAndTimePickerDialog.Builder(this) //.bottomSheet()
+        SingleDateAndTimePickerDialog.Builder(this)
+//            .bottomSheet()
 
             .displayListener {picker ->
                 // Retrieve the SingleDateAndTimePicker
@@ -371,7 +317,6 @@ class MainActivity : AppCompatActivity() {
                 if (date != null) {
                     Log.e("date", date.time.toString())
 
-                    Log.e("form", savedOnTime)
                     val formatter = SimpleDateFormat("dd-MM-yyyy HH:mm")
 
                     val formatted = formatter.format(date.time)
@@ -381,13 +326,16 @@ class MainActivity : AppCompatActivity() {
                     lightOn_time_text.text = formatted.toString()
                     val dateInSeconds = (date.time) / 1000
                     appGlobals.saveLong("timeSeconds", dateInSeconds)
+
+                    lightOn_time_button.backgroundTintList = getColorStateList(R.color.purple_700)
+                    lightOn_time_button.isEnabled = true
                 }
             }
             .display()
     }
 
     private fun singleLightOffDateTimePicker() {
-        SingleDateAndTimePickerDialog.Builder(this) //.bottomSheet()
+        SingleDateAndTimePickerDialog.Builder(this)
 
             .displayListener {picker ->
                 // Retrieve the SingleDateAndTimePicker
@@ -406,21 +354,19 @@ class MainActivity : AppCompatActivity() {
                 if (date != null) {
                     Log.e("date", date.time.toString())
 
-                    Log.e("form", savedOnTime)
                     val formatter = SimpleDateFormat("dd-MM-yyyy HH:mm")
 
                     val formatted = formatter.format(date.time)
                     appGlobals.saveString("LightOffTime", formatted)
-                    savedOnTime = appGlobals.getValueString("LightOffTime").toString()
+                    savedOffTime = appGlobals.getValueString("LightOffTime").toString()
                     println("Current Date and Time is: $formatted")
                     lightOff_time_text.text = formatted.toString()
-//                    saveTimeButtonId.visibility = View.VISIBLE
 
-//                    val givenDateString = "Tue Apr 23 16:08:28 GMT+05:30 2013"
-//                    val sdf = SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy")
                     val dateInSeconds = (date.time) / 1000
                     Log.e("date in sec", dateInSeconds.toString())
                     appGlobals.saveLong("offTimeSeconds", dateInSeconds)
+                    lightOff_time_button.backgroundTintList = getColorStateList(R.color.purple_700)
+                    lightOff_time_button.isEnabled = true
                 }
             }
             .display()
@@ -435,15 +381,6 @@ class MainActivity : AppCompatActivity() {
         }
         builder.create().show()
 
-        if (appGlobals.getValueInt("sp") == 3) {
-            if (lightSwitchOnOffId.textOn == "On") {
-                lightSwitchOnOffId.isChecked = false
-                lightOnOffImageId.setImageResource(R.drawable.light_off)
-            } else if (lightSwitchOnOffId.textOff == "Off") {
-                lightSwitchOnOffId.isChecked = true
-                lightOnOffImageId.setImageResource(R.drawable.light_on)
-            }
-        }
 
     }
 }

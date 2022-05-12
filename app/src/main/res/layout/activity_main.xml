@@ -8,31 +8,54 @@
     tools:context=".MainActivity"
     android:orientation="vertical">
 
-    <RadioGroup
-        android:id="@+id/radioGroupId"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/textViewMaterialButtonId"
+        style="?attr/materialButtonOutlinedStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:text="Select Option to turn light on/off"
+        android:textAllCaps="false"
+        app:strokeColor="@color/purple_500"
+        android:clickable="false"
+        app:cornerRadius="10dp"/>
 
-        <RadioButton
-            android:id="@+id/sunTimeId"
+    <LinearLayout
+        android:id="@+id/radioGroupLayoutId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_below="@+id/textViewMaterialButtonId">
+
+        <RadioGroup
+            android:id="@+id/radioGroupId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Sun timing"
-            android:checked="true"/>
+            android:orientation="vertical">
 
-        <RadioButton
-            android:id="@+id/manualTimeId"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Manual timing"/>
+            <RadioButton
+                android:id="@+id/sunTimeId"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Sun timing" />
 
-        <RadioButton
-            android:id="@+id/directOnOffId"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Direct On/Off" />
-    </RadioGroup>
+            <RadioButton
+                android:id="@+id/manualTimeId"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Manual timing" />
+
+            <RadioButton
+                android:id="@+id/directOnOffId"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Direct On/Off" />
+        </RadioGroup>
+
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/powerButtonLayout"
@@ -40,19 +63,17 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="20dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginEnd="20dp"
-        android:layout_below="@id/radioGroupId">
+        android:layout_below="@id/radioGroupLayoutId"
+        android:gravity="center">
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/lightSwitchOnOffId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="30dp"
-            android:checked="false"
+            android:enabled="false"
             android:text="Power     "
-            android:textOff="Off"
-            android:textOn="On"
+            android:textOff="OFF"
+            android:textOn="ON"
             app:showText="true"
             android:textSize="18sp"
             android:thumb="@drawable/switch_thumb"
@@ -62,7 +83,6 @@
             android:id="@+id/lightOnOffImageId"
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:layout_marginTop="45dp"
             android:layout_marginStart="30dp"
             android:src="@drawable/light_off"/>
 
@@ -79,56 +99,92 @@
         android:orientation="horizontal">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/lightOn_time_button"
+            android:id="@+id/lightOnTimeButtonId"
+            style="?attr/materialButtonOutlinedStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Set light on"
-            android:clickable="false"
-            android:backgroundTint="@color/off_white"
-            android:textAllCaps="false" />
+            android:text="Light on time"
+            android:enabled="false"
+            app:icon="@drawable/ic_baseline_timer_24"
+            android:textAllCaps="false"/>
 
         <TextView
             android:id="@+id/lightOn_time_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
             android:text="--"
-            android:visibility="invisible"
-            android:textSize="20sp"
-            android:layout_marginTop="20dp"
-            android:layout_marginStart="20dp"/>
+            android:textSize="15sp"
+            android:visibility="invisible" />
 
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/saveOnTimeButtonLayoutId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/timeLinearLayout"
+        android:gravity="center"
+        android:layout_marginTop="10dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/lightOn_time_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/off_white"
+            android:enabled="false"
+            android:text="Save ON time"
+            android:textAllCaps="false" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/offTimeLinearLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/timeLinearLayout"
+        android:layout_below="@id/saveOnTimeButtonLayoutId"
         android:layout_marginStart="20dp"
         android:layout_marginTop="20dp"
         android:layout_marginEnd="10dp"
         android:orientation="horizontal">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/lightOff_time_button"
+            android:id="@+id/lightOffTimeButtonId"
+            style="?attr/materialButtonOutlinedStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:clickable="false"
-            android:backgroundTint="@color/off_white"
-            android:text="set light off"
-            android:textAllCaps="false" />
+            android:text="Light off time"
+            android:textAllCaps="false"
+            android:enabled="false"
+            app:icon="@drawable/ic_baseline_timer_off_24" />
 
         <TextView
             android:id="@+id/lightOff_time_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="--"
-            android:visibility="invisible"
-            android:textSize="20sp"
+            android:layout_marginStart="20dp"
             android:layout_marginTop="10dp"
-            android:layout_marginStart="20dp"/>
+            android:text="--"
+            android:textSize="15sp"
+            android:visibility="invisible" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/saveOffTimeButtonLayoutId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/offTimeLinearLayout"
+        android:gravity="center"
+        android:layout_marginTop="10dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/lightOff_time_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:backgroundTint="@color/off_white"
+            android:text="Save OFF time"
+            android:textAllCaps="false" />
 
     </LinearLayout>
 
