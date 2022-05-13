@@ -1,11 +1,9 @@
 package org.codebase.raspidroidconn
 
-import android.app.Activity
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.view.inputmethod.InputMethodManager
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import androidx.annotation.RequiresApi
@@ -15,12 +13,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.crossbar.autobahn.wamp.Client
 import io.crossbar.autobahn.wamp.Session
 import io.crossbar.autobahn.wamp.types.CallResult
-import io.crossbar.autobahn.wamp.types.Publication
 import kotlinx.android.synthetic.main.activity_main.*
-import java.text.ParseException
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
-import java.util.*
 import java.util.concurrent.CompletableFuture
 
 
@@ -119,7 +113,7 @@ class MainActivity : AppCompatActivity() {
 
         if (appGlobals.getValueInt("sp") == 1) {
             if (wampSession.isConnected) {
-                val callProc: CompletableFuture<CallResult> = wampSession.call("pk.codebase.sys.automatically_on_off")
+                val callProc: CompletableFuture<CallResult> = wampSession.call("pk.codebase.sys.automatically_on_off", true)
                 callProc.thenAccept { callResult ->
                     println(String.format("Call result: %s", callResult.results))
                 }
@@ -156,6 +150,7 @@ class MainActivity : AppCompatActivity() {
                 val callProc: CompletableFuture<CallResult> = wampSession.call("pk.codebase.sys.light_on")
                 callProc.thenAccept { callResult ->
                     println(String.format("Call result: %s", callResult.results))
+                    wampSession.call("pk.codebase.sys.automatically_on_off", false)
                 }
                 callProc.exceptionally { throwable ->
                     Log.e("thr", throwable.message.toString())
@@ -192,7 +187,9 @@ class MainActivity : AppCompatActivity() {
             if (lightOn_time_button.isPressed) {
                 Log.e("on", "is here")
                 val callProc: CompletableFuture<CallResult> = wampSession.call("pk.codebase.sys.set_on_at", savedOnTimeSeconds)
+                wampSession.call("pk.codebase.sys.automatically_on_off", false)
                 callProc.thenAccept { callResult ->
+                    Log.e("in accept", "accepted")
                     println(String.format("Call result: %s", callResult.results))
                 }
                 callProc.exceptionally { throwable ->
@@ -206,6 +203,7 @@ class MainActivity : AppCompatActivity() {
                 val callProc: CompletableFuture<CallResult> = wampSession.call("pk.codebase.sys.set_off_at", savedOffTimeSeconds)
                 callProc.thenAccept { callResult ->
                     println(String.format("Call result: %s", callResult.results))
+                    wampSession.call("pk.codebase.sys.automatically_on_off", false)
                 }
                 callProc.exceptionally { throwable ->
                     Log.e("thr", throwable.message.toString())
@@ -284,7 +282,6 @@ class MainActivity : AppCompatActivity() {
         lightOff_time_text.visibility = View.INVISIBLE
         lightOn_time_text.visibility = View.INVISIBLE
         lightOff_time_button.isEnabled = false
-        saveTimeButtonId.visibility = View.INVISIBLE
     }
 
     private fun enableTimeButtons() {
@@ -293,7 +290,6 @@ class MainActivity : AppCompatActivity() {
 
         lightOff_time_text.visibility = View.VISIBLE
         lightOn_time_text.visibility = View.VISIBLE
-//        saveTimeButtonId.visibility = View.INVISIBLE
     }
 
     private fun singleLightOnDateTimePicker() {
